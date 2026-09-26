@@ -27,7 +27,12 @@ module.exports = {
     [
       "@semantic-release/exec",
       {
-        publishCmd: "npm stage publish --provenance --access public --tag ${nextRelease.channel || 'latest'}",
+        // @semantic-release/exec parses this command's stdout as JSON release
+        // information. npm writes its lifecycle banners and the packed tarball name to
+        // stdout, so `1>&2` sends that output to stderr instead, where the plugin
+        // expects logging. Without it the plugin logs a JSONError that looks like a
+        // failed publish but is not.
+        publishCmd: "npm stage publish --provenance --access public --tag ${nextRelease.channel || 'latest'} 1>&2",
       },
     ],
 
