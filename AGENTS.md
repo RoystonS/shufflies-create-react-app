@@ -26,6 +26,24 @@ emitted. That is why `erasableSyntaxOnly` is on and why they import source with
 explicit `.ts` extensions. The generator itself is emitted as JavaScript, so its
 internal imports use `.js` extensions.
 
+## Test files and lint exceptions
+
+`.spec` and `.test` suffixes are both supported everywhere — the `npm test` glob and
+the oxlint override for test files accept either — but this repo only _writes_
+`.spec` files, and `test/create-app.spec.ts` guards that the template ships a `.spec`
+sample.
+
+`test/scaffold.integration.ts` is deliberately not `.spec`: `npm test` runs
+`test/*.{test,spec}.ts`, so the `.integration` suffix keeps the slow, network-bound
+scaffold check out of the default suite. It is run by `npm run test:scaffold`.
+
+Lint rules that exist for one file's sake live in that file, as a file-wide
+`/* oxlint-disable rule/name */` next to a comment saying why. Only rules that apply
+by broad file pattern (`*.spec`, `*.test`, `*.integration`, `*.cjs`) are configured
+in `oxlint.config.ts`. `npm run lint` passes
+`--report-unused-disable-directives-severity error`, so a disable comment that stops
+suppressing anything fails the build instead of rotting.
+
 ## Simulating a real `create`
 
 `npm run scaffold:demo` packs this package to a tarball, installs that tarball into
@@ -43,7 +61,7 @@ its checks, and `--pnpm` to do everything with pnpm. `scripts/` is not published
 ## Editing the template
 
 - `template/package.json` must keep `react` and `react-dom` as its only runtime
-  dependencies. `test/create-app.test.ts` enforces this.
+  dependencies. `test/create-app.spec.ts` enforces this.
 - `template/_gitignore` and `template/_oxlint.config.ts` are stored under
   placeholder names and renamed while scaffolding by `TEMPLATE_RENAMES` in
   `src/create-app.ts`. Two reasons: npm drops real `.gitignore` files from

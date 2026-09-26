@@ -5,5 +5,6 @@
   // List of extensions which should be recommended for users of this workspace.
   "recommendations": ["oxc.oxc-vscode", "github.vscode-github-actions"],
   // List of extensions recommended by VS Code that should not be recommended for users of this workspace.
-  "unwantedRecommendations": []
+  // Prettier would fight oxfmt over the same files.
+  "unwantedRecommendations": ["esbenp.prettier-vscode"]
 }

@@ -64,7 +64,12 @@ them when the project is opened.
 | `oxc.oxc-vscode`  | oxlint diagnostics and oxfmt formatting, in the editor. |
 | `vitest.explorer` | Run and debug the Vitest suite from the editor.         |
 
-`.vscode/settings.json` makes `oxc.oxc-vscode` the default formatter and runs
-`source.format.oxc` and `source.fixAll.oxc` on save, so files are kept in the shape
-that `npm run format:check` and `npm run lint` expect. If you would rather format
-without saving, run `npm run format` instead.
+`.vscode/settings.json` makes `oxc.oxc-vscode` the default formatter, pins it for
+every language the project uses, and runs `source.format.oxc` and
+`source.fixAll.oxc` on save, so saved files stay in the shape that
+`npm run format:check` and `npm run lint` expect.
+
+The per-language entries look redundant next to `editor.defaultFormatter`, but they
+are load-bearing: VS Code lets a language-scoped setting win over the generic
+default, so a user-level Prettier configuration for `[javascript]`, `[json]` or
+`[markdown]` would otherwise format those files differently from `oxfmt`.

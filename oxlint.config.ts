@@ -4,14 +4,19 @@ import { defineConfig } from "oxlint";
 // This repository is a Node.js CLI plus a bundled template. The template has its
 // own `oxlint.config.ts` (extending the `react` preset) and is linted in place
 // once it has been scaffolded, so it is skipped here.
+//
+// Only rules that apply by broad file *pattern* belong here. A rule that exists for
+// the sake of one file is disabled in that file instead, next to the code it excuses.
 export default defineConfig({
   extends: [node],
   ignorePatterns: ["template/**"],
   overrides: [
     {
       // `node:test` registers a test by handing the runner a promise, so the
-      // idiomatic `it(...)` call is not a floating promise.
-      files: ["**/*.test.ts", "**/*.integration.ts"],
+      // idiomatic `it(...)` call is not a floating promise. Both suffixes are
+      // accepted because `.spec` and `.test` files are equally welcome; this repo
+      // writes `.spec` files.
+      files: ["**/*.spec.ts", "**/*.test.ts", "**/*.integration.ts"],
       rules: {
         "typescript/no-floating-promises": "off",
       },
@@ -23,22 +28,6 @@ export default defineConfig({
       rules: {
         "import/no-commonjs": "off",
         "import/unambiguous": "off",
-      },
-    },
-    {
-      // These are ESM entry points that Node runs directly, where top-level await
-      // is valid. The rule only guards `require(esm)` consumers, which cannot apply.
-      files: ["src/cli.ts", "scripts/**"],
-      rules: {
-        "node/no-top-level-await": "off",
-      },
-    },
-    {
-      // Scaffolding happens one step at a time, and each step needs the previous
-      // exit code, so the shared helper deliberately uses the synchronous spawn API.
-      files: ["scripts/**"],
-      rules: {
-        "node/no-sync": "off",
       },
     },
   ],

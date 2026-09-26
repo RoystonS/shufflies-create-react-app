@@ -1,3 +1,8 @@
+// semantic-release's exec plugin interpolates `${nextRelease.channel}` itself when
+// it builds the publish command, so these are not JavaScript template literals and
+// `eslint/no-template-curly-in-string` is a false positive here.
+/* oxlint-disable eslint/no-template-curly-in-string */
+
 module.exports = {
   branches: ["main", { name: "next", prerelease: true }],
   plugins: [
@@ -22,8 +27,7 @@ module.exports = {
     [
       "@semantic-release/exec",
       {
-        publishCmd:
-          "npm stage publish --provenance --access public --tag ${nextRelease.channel || 'latest'}",
+        publishCmd: "npm stage publish --provenance --access public --tag ${nextRelease.channel || 'latest'}",
       },
     ],
 

@@ -6,5 +6,6 @@
   // `oxc.oxc-vscode` provides the oxlint diagnostics and oxfmt formatting.
   "recommendations": ["oxc.oxc-vscode", "vitest.explorer"],
   // List of extensions recommended by VS Code that should not be recommended for users of this workspace.
-  "unwantedRecommendations": []
+  // Prettier would fight oxfmt over the same files.
+  "unwantedRecommendations": ["esbenp.prettier-vscode"]
 }

@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+// This is an ESM entry point that Node runs directly, so the top-level await at the
+// bottom is valid. `node/no-top-level-await` only guards `require(esm)` consumers.
+/* oxlint-disable node/no-top-level-await */
+
 import process from "node:process";
 import { createInterface } from "node:readline/promises";
 

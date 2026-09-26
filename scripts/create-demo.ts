@@ -1,3 +1,8 @@
+// This is an ESM script that Node runs directly, so the top-level `await main(...)`
+// at the bottom is valid. `node/no-top-level-await` only guards `require(esm)`
+// consumers.
+/* oxlint-disable node/no-top-level-await */
+
 import { mkdir, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";

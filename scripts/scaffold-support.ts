@@ -1,3 +1,9 @@
+// Scaffolding runs one command at a time and each step needs the previous exit code
+// before deciding the next, so `runCommand` deliberately uses the synchronous spawn
+// API. `node/no-sync` exists to keep I/O off the event loop, which does not apply to
+// a short-lived developer script.
+/* oxlint-disable node/no-sync */
+
 import { spawnSync } from "node:child_process";
 
 /** Scripts the generated application is expected to pass. */
