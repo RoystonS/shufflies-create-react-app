@@ -46,7 +46,8 @@ With no directory argument the initializer prompts for one, defaulting to
   [`@shufflies/oxlint-config`](https://www.npmjs.com/package/@shufflies/oxlint-config),
   including type-aware rules.
 - oxfmt for formatting, including import sorting.
-- Separate TypeScript projects for the app, the build tooling and the specs.
+- Separate TypeScript projects for the app, the build tooling and the specs,
+  sharing one base configuration.
 
 ## Repository layout
 

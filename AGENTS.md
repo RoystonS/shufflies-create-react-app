@@ -67,6 +67,15 @@ its checks, and `--pnpm` to do everything with pnpm. `scripts/` is not published
   `src/create-app.ts`. Two reasons: npm drops real `.gitignore` files from
   published tarballs, and oxlint treats a nested `oxlint.config.ts` as the config
   for its own directory, which would stop this repo from ignoring `template/`.
+- `template/tsconfig.base.json` holds the compiler options the three projects
+  share; `tsconfig.app.json`, `tsconfig.node.json` and `tsconfig.spec.json` extend
+  it and add only their own `target`, `lib`, `types` and paths. Keep path-valued
+  options (`tsBuildInfoFile`, `include`, `exclude`) in the extending files, because
+  TypeScript resolves relative paths against the file that declares them.
+  `tsconfig.spec.json` extends the app project, so it must keep `"exclude": []`: an
+  inherited `exclude` filters the spec project's own `include`, which would drop the
+  specs from it while `tsc -b` still reported success. `test/template-tsconfig.spec.ts`
+  guards both the shared options and the spec project's inputs.
 - `template/` is excluded from this repo's own lint run via `ignorePatterns`,
   because it is a React app that the `react` preset only lints correctly once its
   dependencies are installed. It is linted for real by `npm run test:scaffold`.

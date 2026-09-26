@@ -38,6 +38,13 @@ checks them all and editors pick the right settings per file.
 | `tsconfig.node.json` | `vite.config.ts` and `oxlint.config.ts`.         |
 | `tsconfig.spec.json` | The `*.spec.*` and `*.test.*` files under `src`. |
 
+`tsconfig.base.json` holds the compiler options every project shares, so the
+module and strictness settings are stated once. Each project extends it and adds
+only what is specific to itself: its `target`, `lib`, `types` and paths.
+`tsconfig.spec.json` extends `tsconfig.app.json` for the browser settings, and
+resets `exclude`, because the app project excludes exactly the files the spec
+project exists to check.
+
 ## Tooling
 
 - **Tests** run with [Vitest](https://vitest.dev/), configured in `vite.config.ts`.

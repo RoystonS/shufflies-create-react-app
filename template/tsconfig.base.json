@@ -1,0 +1,29 @@
+{
+  // Shared compiler options for every project in this app. `tsconfig.app.json`,
+  // `tsconfig.node.json` and `tsconfig.spec.json` extend this file and add only
+  // what is specific to them, so these settings live in one place.
+  //
+  // Path-valued options (`tsBuildInfoFile`, `include`, `exclude`) stay in the
+  // extending files, because TypeScript resolves relative paths against the
+  // config file that declares them.
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "allowImportingTsExtensions": true,
+    "noUncheckedSideEffectImports": true,
+
+    "noEmit": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}
