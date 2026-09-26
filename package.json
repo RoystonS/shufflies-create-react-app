@@ -20,7 +20,7 @@
     "url": "git+https://github.com/RoystonS/shufflies-create-react-app.git"
   },
   "bin": {
-    "create-shufflies-react-app": "./dist/cli.js"
+    "create-shufflies-react-app": "dist/cli.js"
   },
   "files": [
     "dist",

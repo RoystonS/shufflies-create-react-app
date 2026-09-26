@@ -7,6 +7,7 @@ import { after, before, describe, it } from "node:test";
 import {
   DEFAULT_PROJECT_NAME,
   listRelativeFiles,
+  packageRootDirectory,
   parseArguments,
   pathExists,
   readPackageVersion,
@@ -119,6 +120,23 @@ describe("parseArguments", () => {
 describe("readPackageVersion", () => {
   it("reports the version of the initializer itself", async () => {
     assert.equal(await readPackageVersion(), "0.0.0-semantically-released");
+  });
+});
+
+describe("published manifest", () => {
+  it("declares a bin path npm keeps and that exists", async () => {
+    const root = packageRootDirectory();
+    const manifest = await readJsonObject(path.join(root, "package.json"));
+    const target = requiredRecord(manifest, "bin")["create-shufflies-react-app"];
+
+    if (typeof target !== "string") {
+      assert.fail("expected the manifest to declare a create-shufflies-react-app bin");
+    }
+
+    // npm 12 removes a bin entry whose path starts with `./`, which leaves the
+    // published package with no command at all.
+    assert.ok(!target.startsWith("./"), "expected the bin path to have no leading ./");
+    assert.ok(await pathExists(path.join(root, target)), `expected the bin target ${target} to exist`);
   });
 });
 
