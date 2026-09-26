@@ -1,0 +1,63 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "schedule": ["before 3am every day"],
+  "timezone": "Europe/London",
+  "prHourlyLimit": 10,
+  "rangeStrategy": "bump",
+  "commitMessagePrefix": "chore",
+  "commitMessageTopic": "{{depName}}",
+
+  // Basically config:best-practices but without dev dependency pinning
+  "extends": [
+    "config:recommended",
+    "docker:pinDigests",
+    "helpers:pinGitHubActionDigests",
+    ":configMigration",
+    // ":pinDevDependencies",
+    "abandonments:recommended",
+    "security:minimumReleaseAgeNpm",
+    ":maintainLockFilesWeekly",
+
+    ":semanticCommits"
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": ["oxlint", "oxfmt"],
+      "groupName": "Oxc"
+    },
+    {
+      "matchPackagePrefixes": ["@commitlint/"],
+      "groupName": "Commitlint"
+    },
+    {
+      "matchPackageNames": ["semantic-release"],
+      "matchPackagePrefixes": ["@semantic-release/"],
+      "groupName": "Semantic Release"
+    },
+    {
+      "matchPackageNames": ["react", "react-dom", "@types/react", "@types/react-dom"],
+      "groupName": "React"
+    },
+    {
+      "matchPackageNames": ["vite", "vitest", "typescript"],
+      "matchPackagePrefixes": ["@vitejs/"],
+      "groupName": "Build and test"
+    },
+    {
+      "matchPackagePrefixes": ["@shufflies/"],
+      "groupName": "Shufflies"
+    },
+    {
+      "matchPackageNames": ["@types/node", "husky", "rimraf"],
+      "groupName": "Tooling"
+    },
+    {
+      "matchPackagePatterns": ["*"],
+      "groupName": "Transitive Dependencies",
+      // Groups remaining dependencies not covered by other groups
+      "dependencyDashboardApproval": false
+    }
+  ],
+  "rebaseWhen": "conflicted",
+  "labels": ["dependencies"]
+}

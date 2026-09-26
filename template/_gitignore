@@ -1,0 +1,4 @@
+.env
+/dist/
+/.vitest/
+/node_modules/

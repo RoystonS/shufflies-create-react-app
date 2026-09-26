@@ -1,0 +1,86 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "03:00"
+      timezone: "Europe/London"
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+    groups:
+      oxc:
+        patterns:
+          - "oxlint"
+          - "oxlint-*"
+          - "oxfmt"
+
+      commit-lint:
+        patterns:
+          - "@commitlint/*"
+
+      semantic-release:
+        patterns:
+          - "@semantic-release/*"
+          - "semantic-release"
+
+      tooling:
+        patterns:
+          - "@types/node"
+          - "husky"
+          - "rimraf"
+          - "typescript"
+
+      shufflies:
+        patterns:
+          - "@shufflies/*"
+
+      transitive-deps:
+        patterns:
+          - "*"
+
+  # The bundled template carries the dependency set of the applications it scaffolds.
+  - package-ecosystem: "npm"
+    directory: "/template"
+    schedule:
+      interval: "daily"
+      time: "03:00"
+      timezone: "Europe/London"
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+    groups:
+      oxc:
+        patterns:
+          - "oxlint"
+          - "oxlint-*"
+          - "oxfmt"
+
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+
+      build-and-test:
+        patterns:
+          - "vite"
+          - "@vitejs/*"
+          - "vitest"
+          - "typescript"
+
+      shufflies:
+        patterns:
+          - "@shufflies/*"
+
+      transitive-deps:
+        patterns:
+          - "*"

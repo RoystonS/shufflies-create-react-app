@@ -1,0 +1,14 @@
+{
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "editor.formatOnSave": true,
+  "editor.formatOnSaveMode": "file",
+  "editor.codeActionsOnSave": {
+    "source.format.oxc": "always",
+    "source.fixAll.oxc": "always"
+  },
+  "cSpell.words": ["nodenext", "npmjs", "oxc", "oxfmt", "oxlint", "Royston", "Shufflebotham", "shufflies", "tsgolint"],
+  "cSpell.ignorePaths": ["pnpm-lock.yaml", "node_modules", ".git", ".vscode"],
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  }
+}

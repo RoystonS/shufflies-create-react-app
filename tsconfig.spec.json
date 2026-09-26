@@ -1,0 +1,6 @@
+{
+  // Type-checks the test suite only. The tests run through Node's native
+  // TypeScript support (`node --test`), so they are never emitted.
+  "extends": "./tsconfig.json",
+  "include": ["test"]
+}

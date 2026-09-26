@@ -1,0 +1,14 @@
+{
+  // Builds the published CLI: emits JavaScript next to the `bin` entry points.
+  // `erasableSyntaxOnly` is disabled because this project emits real JavaScript
+  // rather than relying on Node's type stripping.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
+    "erasableSyntaxOnly": false,
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src"]
+}

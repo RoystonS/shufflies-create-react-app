@@ -1,0 +1,6 @@
+{
+  // Type-checks the developer scripts. Like the tests, they run through Node's
+  // native TypeScript support, so they are never emitted.
+  "extends": "./tsconfig.json",
+  "include": ["scripts"]
+}

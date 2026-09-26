@@ -1,0 +1,5 @@
+node = "26.10.0"
+npm = "12.1.0"
+
+[settings]
+auto-install = true

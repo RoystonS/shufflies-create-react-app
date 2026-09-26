@@ -1,0 +1,11 @@
+{
+  // Solution file: `tsc -b` builds each referenced project, and editors use the
+  // references to pick the right settings for a given file. Nothing is compiled
+  // here, because the bundler produces the output.
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" },
+    { "path": "./tsconfig.spec.json" }
+  ]
+}
