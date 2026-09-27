@@ -1,0 +1,13 @@
+{
+  "packageJson": {
+    "scripts": {
+      "browser:install": "playwright install chromium",
+      "test:browser": "playwright test",
+      "test:browser:update": "playwright test --update-snapshots"
+    },
+    "devDependencies": {
+      "@playwright/test": "^1.63.0"
+    }
+  },
+  "ignore": ["/blob-report/", "/playwright-report/", "/test-results/"]
+}

@@ -33,10 +33,15 @@ Unlike \`npm run test:scaffold\`, the result is left in place so it can be
 inspected, opened in an editor and run.
 
 Options:
-  --npm        Fetch the initializer and install the app with npm (default)
-  --pnpm       Do both with pnpm instead
-  --install    Also install the app's dependencies and run its checks
-  -h, --help   Show this message
+  --npm           Fetch the initializer and install the app with npm (default)
+  --pnpm          Do both with pnpm instead
+  --playwright    Scaffold the app with Playwright browser and component tests
+  --install       Also install the app's dependencies and run its checks
+  -h, --help      Show this message
+
+\`--playwright\` is passed to the initializer, so the app it writes has the browser
+tests. Those need \`npm run browser:install\` and a downloaded browser, so
+\`--install\` stops at listing them.
 `;
 
 type PackageManager = "npm" | "pnpm";
@@ -45,6 +50,8 @@ type Options = {
   /** Install the generated app's dependencies and run its checks. */
   readonly install: boolean;
   readonly packageManager: PackageManager;
+  /** Ask the initializer for the app with Playwright browser and component tests. */
+  readonly playwright: boolean;
 };
 
 async function main(argv: readonly string[]): Promise<number> {
@@ -77,10 +84,7 @@ async function runSimulation(options: Options, runDirectory: string): Promise<vo
 
   const appDirectory = path.join(runDirectory, APP_NAME);
   process.stdout.write("Running the installed create-shufflies-react-app binary...\n");
-  assertCommandSucceeded(
-    "create-shufflies-react-app",
-    runInitializer(options.packageManager, consumerDirectory, appDirectory),
-  );
+  assertCommandSucceeded("create-shufflies-react-app", runInitializer(options, consumerDirectory, appDirectory));
 
   installAndVerifyIfRequested(options, appDirectory);
   process.stdout.write(describeResult(options, runDirectory, appDirectory));
@@ -125,18 +129,18 @@ async function createConsumerProject(options: Options, runDirectory: string, tar
 }
 
 /** Runs the binary the package publishes, from the project it was installed into. */
-function runInitializer(
-  packageManager: PackageManager,
-  consumerDirectory: string,
-  appDirectory: string,
-): CommandResult {
+function runInitializer(options: Options, consumerDirectory: string, appDirectory: string): CommandResult {
   const binary = "create-shufflies-react-app";
-  // `--no-install` stops npm falling back to the registry; `pnpm exec` only ever
-  // runs a locally installed binary.
+  const initializerOptions = options.playwright ? ["--playwright"] : [];
+  // `--no-install` stops npm falling back to the registry, and `--` stops npm reading
+  // the initializer's own options as its own — without it npm silently drops
+  // `--playwright`. `pnpm exec` only ever runs a locally installed binary.
   const args =
-    packageManager === "pnpm" ? ["exec", binary, appDirectory] : ["exec", "--no-install", binary, appDirectory];
+    options.packageManager === "pnpm"
+      ? ["exec", binary, appDirectory, ...initializerOptions]
+      : ["exec", "--no-install", "--", binary, appDirectory, ...initializerOptions];
 
-  return runCommand(packageManager, args, consumerDirectory);
+  return runCommand(options.packageManager, args, consumerDirectory);
 }
 
 function installAndVerifyIfRequested(options: Options, appDirectory: string): void {
@@ -159,6 +163,24 @@ function installAndVerifyIfRequested(options: Options, appDirectory: string): vo
   }
 
   process.stdout.write(`\nAll checks passed: ${APP_CHECKS.join(", ")}\n`);
+  listBrowserTestsIfRequested(options, appDirectory);
+}
+
+/**
+ * Shows that the browser tests the variant ships are discoverable. They are not run:
+ * the browser is a separate download, which is what `npm run browser:install` in the
+ * generated app is for.
+ */
+function listBrowserTestsIfRequested(options: Options, appDirectory: string): void {
+  if (!options.playwright) {
+    return;
+  }
+
+  const playwrightCli = path.join(appDirectory, "node_modules", "@playwright", "test", "cli.js");
+  const listed = runCommand(process.execPath, [playwrightCli, "test", "--list"], appDirectory);
+
+  assertCommandSucceeded("playwright test --list", listed);
+  process.stdout.write(`\nThe app can list its browser tests:\n\n${listed.output}`);
 }
 
 function describeResult(options: Options, runDirectory: string, appDirectory: string): string {
@@ -167,6 +189,7 @@ function describeResult(options: Options, runDirectory: string, appDirectory: st
     "Next steps:",
     `  cd ${appDirectory}`,
     ...(options.install ? [] : [`  ${options.packageManager} install`]),
+    ...(options.playwright ? [`  ${options.packageManager} run browser:install`] : []),
     `  ${options.packageManager} run dev`,
   ];
 
@@ -182,7 +205,7 @@ function describeResult(options: Options, runDirectory: string, appDirectory: st
 }
 
 function parseArguments(argv: readonly string[]): Options | "help" {
-  let options: Options = { install: false, packageManager: "npm" };
+  let options: Options = { install: false, packageManager: "npm", playwright: false };
 
   for (const argument of argv) {
     if (HELP_FLAGS.has(argument)) {
@@ -198,6 +221,10 @@ function parseArguments(argv: readonly string[]): Options | "help" {
 function applyFlag(argument: string, options: Options): Options {
   if (argument === "--install") {
     return { ...options, install: true };
+  }
+
+  if (argument === "--playwright") {
+    return { ...options, playwright: true };
   }
 
   if (argument === "--npm" || argument === "--pnpm") {

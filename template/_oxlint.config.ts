@@ -6,9 +6,11 @@ import { defineConfig } from "oxlint";
 export default defineConfig({
   extends: [react],
   overrides: [
-    // Vite only accepts its configuration as a default export.
+    // Tool configuration modules are inherently default-exporting, so they are
+    // exempt by pattern rather than by name: `vite.config.ts` and the
+    // `playwright.config.ts` that `--playwright` adds both need it.
     {
-      files: ["vite.config.ts"],
+      files: ["**/*.config.ts"],
       rules: {
         "import/no-default-export": "off",
       },

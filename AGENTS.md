@@ -23,8 +23,10 @@ respectively.
 
 Tests and scripts run through Node's native TypeScript support, so they are never
 emitted. That is why `erasableSyntaxOnly` is on and why they import source with
-explicit `.ts` extensions. The generator itself is emitted as JavaScript, so its
-internal imports use `.js` extensions.
+explicit `.ts` extensions. `src/` modules import each other the same way, because the
+tests load them directly; `tsconfig.generator.json` sets
+`rewriteRelativeImportExtensions`, so the JavaScript it emits for the published CLI
+points at `.js` files instead.
 
 ## Test files and lint exceptions
 
@@ -54,9 +56,16 @@ published `files` allowlist, the `bin` wiring and template resolution out of
 `dist/cli.js` directly.
 
 It writes under `<os temp>/shufflies-create-demo/<timestamp>/` and never deletes
-anything. Pass `--install` to also install the generated app's dependencies and run
-its checks, and `--pnpm` to do everything with pnpm. `scripts/` is not published:
-`package.json` only ships `dist` and `template`.
+anything. Pass `--playwright` to scaffold the optional overlay, `--install` to also
+install the generated app's dependencies and run its checks, and `--pnpm` to do
+everything with pnpm. `scripts/` is not published: `package.json` ships `dist`,
+`template` and `features`.
+
+`--playwright` reaches the initializer through the package manager, which is why the
+npm branch passes `--` before the binary: without it npm reads `--playwright` as an
+option of its own and silently drops it. `--install` then stops at
+`playwright test --list`, because running those tests needs a browser that npm does not
+install.
 
 ## Editing the template
 
@@ -79,6 +88,18 @@ its checks, and `--pnpm` to do everything with pnpm. `scripts/` is not published
 - `template/` is excluded from this repo's own lint run via `ignorePatterns`,
   because it is a React app that the `react` preset only lints correctly once its
   dependencies are installed. It is linted for real by `npm run test:scaffold`.
+- `features/<name>/` holds an optional overlay that is copied over the template when
+  its flag is passed — `--playwright` copies `features/playwright/`. Overlay files are
+  copied as they are, replacing a template file at the same path (the Playwright
+  overlay replaces `tsconfig.json` so its project is referenced), and `_feature.json`
+  declares the changes that are not files: the `scripts` and `devDependencies` to merge
+  into the generated manifest, and the `.gitignore` lines to add. `_readme-section.md`
+  is appended to the generated README so the overlay documents itself. A feature must
+  not add runtime dependencies; `test/playwright-feature.spec.ts` guards that, the
+  manifest merge and the template/overlay `tsconfig.json` pair.
+- `template/_oxlint.config.ts` exempts `**/*.config.ts` from
+  `import/no-default-export` by pattern, so an overlay can ship a tool config without
+  editing the lint config as well.
 - The template is formatted by this repo's oxfmt run, so run `npm run format`
   after editing it.
 
@@ -87,5 +108,11 @@ its checks, and `--pnpm` to do everything with pnpm. `scripts/` is not published
 - `npm test` builds first. The tests import the compiled CLI from `dist/`.
 - The scaffold integration test installs the template's dependencies, so it needs
   network access and is deliberately kept out of `npm test`.
+- npm consumes the options it recognises, so an option meant for the initializer goes
+  after `--`: `npm create @shufflies/react-app@latest my-app -- --playwright`. pnpm
+  forwards it without the separator.
+- `--playwright` adds Playwright to a generated app but no browser. `npm install`
+  fetches the runner only; `npm run browser:install` downloads Chromium. The scaffold
+  integration test therefore stops at `playwright test --list`.
 - Adding a dependency anywhere in `template/` means new scaffolds get it; check
   whether it belongs in the app's `devDependencies` instead.

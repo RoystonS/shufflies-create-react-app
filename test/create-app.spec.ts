@@ -11,11 +11,11 @@ import {
   parseArguments,
   pathExists,
   readPackageVersion,
-  ScaffoldError,
   scaffoldProject,
   templateDirectory,
   toPackageName,
 } from "../src/create-app.ts";
+import { ScaffoldError } from "../src/errors.ts";
 
 let scratchRoot = "";
 
@@ -91,17 +91,38 @@ describe("toPackageName", () => {
 
 describe("parseArguments", () => {
   it("scaffolds into a default directory when nothing is supplied", () => {
-    assert.deepEqual(parseArguments([]), { command: "scaffold", force: false });
+    assert.deepEqual(parseArguments([]), { command: "scaffold", force: false, playwright: false });
   });
 
   it("accepts a target directory, with or without the force flag", () => {
-    assert.deepEqual(parseArguments(["my-app"]), { command: "scaffold", force: false, targetDirectory: "my-app" });
+    assert.deepEqual(parseArguments(["my-app"]), {
+      command: "scaffold",
+      force: false,
+      playwright: false,
+      targetDirectory: "my-app",
+    });
     assert.deepEqual(parseArguments(["--force", "my-app"]), {
       command: "scaffold",
       force: true,
+      playwright: false,
       targetDirectory: "my-app",
     });
-    assert.deepEqual(parseArguments(["-f", "my-app"]), { command: "scaffold", force: true, targetDirectory: "my-app" });
+    assert.deepEqual(parseArguments(["-f", "my-app"]), {
+      command: "scaffold",
+      force: true,
+      playwright: false,
+      targetDirectory: "my-app",
+    });
+  });
+
+  it("turns the optional Playwright tests on with a flag", () => {
+    assert.deepEqual(parseArguments(["--playwright"]), { command: "scaffold", force: false, playwright: true });
+    assert.deepEqual(parseArguments(["--playwright", "my-app", "--force"]), {
+      command: "scaffold",
+      force: true,
+      playwright: true,
+      targetDirectory: "my-app",
+    });
   });
 
   it("recognises the help and version flags", () => {
@@ -180,6 +201,7 @@ describe("scaffoldProject", () => {
     const result = await scaffoldProject({ targetDirectory: target });
 
     assert.equal(result.packageName, "my-app");
+    assert.deepEqual(result.features, []);
     assertScaffoldedFiles(result.files);
 
     const manifest = await readJsonObject(path.join(target, "package.json"));

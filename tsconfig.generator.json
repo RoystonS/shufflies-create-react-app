@@ -1,11 +1,14 @@
 {
   // Builds the published CLI: emits JavaScript next to the `bin` entry points.
   // `erasableSyntaxOnly` is disabled because this project emits real JavaScript
-  // rather than relying on Node's type stripping.
+  // rather than relying on Node's type stripping, and `rewriteRelativeImportExtensions`
+  // turns the `.ts` specifiers the source uses — which is what lets Node run the same
+  // files directly — into the `.js` ones the emitted output needs.
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": false,
-    "allowImportingTsExtensions": false,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
     "erasableSyntaxOnly": false,
     "rootDir": "src",
     "outDir": "dist"

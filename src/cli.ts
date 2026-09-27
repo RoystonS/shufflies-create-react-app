@@ -10,22 +10,28 @@ import {
   DEFAULT_PROJECT_NAME,
   parseArguments,
   type ParsedArguments,
+  PLAYWRIGHT_FEATURE,
   readPackageVersion,
-  ScaffoldError,
   scaffoldProject,
-} from "./create-app.js";
+  type ScaffoldResult,
+} from "./create-app.ts";
+import { ScaffoldError } from "./errors.ts";
 
 const USAGE = `Usage: create-shufflies-react-app [options] [directory]
 
 Scaffolds a Vite + React + TypeScript application with Vitest, oxlint and oxfmt.
 
 Options:
-  -f, --force    Scaffold into a directory that already contains files
-  -h, --help     Show this message
-  -v, --version  Print the initializer version
+  -f, --force       Scaffold into a directory that already contains files
+      --playwright  Add Playwright browser and component tests
+  -h, --help        Show this message
+  -v, --version     Print the initializer version
 
 With npm:  npm create @shufflies/react-app@latest my-app
 With pnpm: pnpm create @shufflies/react-app my-app
+
+npm claims options it recognises, so send this tool's own options after "--":
+  npm create @shufflies/react-app@latest my-app -- --playwright
 `;
 
 async function main(argv: readonly string[]): Promise<number> {
@@ -71,8 +77,13 @@ async function scaffoldFromArguments(parsed: Extract<ParsedArguments, { command:
   }
 
   try {
-    const result = await scaffoldProject({ targetDirectory, force: parsed.force });
-    process.stdout.write(describeSuccess(result.packageName, targetDirectory, result.files.length));
+    const result = await scaffoldProject({
+      targetDirectory,
+      force: parsed.force,
+      playwright: parsed.playwright,
+    });
+
+    process.stdout.write(describeSuccess(result));
     return 0;
   } catch (error) {
     process.stderr.write(`${describeError(error)}\n`);
@@ -95,14 +106,21 @@ async function promptForDirectory(): Promise<string> {
   }
 }
 
-function describeSuccess(packageName: string, targetDirectory: string, fileCount: number): string {
+function describeSuccess(result: ScaffoldResult): string {
+  const nextSteps = [
+    `  cd ${result.targetDirectory}`,
+    "  npm install",
+    // The browser the tests run in is a separate download, so it is only worth
+    // mentioning when the generated application actually has browser tests.
+    ...(result.features.includes(PLAYWRIGHT_FEATURE) ? ["  npm run browser:install"] : []),
+    "  npm run dev",
+  ];
+
   return [
-    `Scaffolded ${packageName} into ${targetDirectory} (${fileCount} files).`,
+    `Scaffolded ${result.packageName} into ${result.targetDirectory} (${result.files.length} files).`,
     "",
     "Next steps:",
-    `  cd ${targetDirectory}`,
-    "  npm install",
-    "  npm run dev",
+    ...nextSteps,
     "",
   ].join("\n");
 }

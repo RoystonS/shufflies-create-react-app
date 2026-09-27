@@ -1,10 +1,20 @@
 import type { Dirent } from "node:fs";
-import { cp, mkdir, readdir, readFile, rename, stat, writeFile } from "node:fs/promises";
+import { cp, mkdir, readdir, readFile, rename, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { ScaffoldError } from "./errors.ts";
+import { applyOverlay } from "./features.ts";
+import { isRecord, MANIFEST_FILE, readJsonRecord, writeJson } from "./json.ts";
+
 /** Directory, relative to the package root, that holds the application template. */
 const TEMPLATE_DIRECTORY_NAME = "template";
+
+/** Directory, relative to the package root, that holds the optional feature overlays. */
+const FEATURES_DIRECTORY_NAME = "features";
+
+/** Overlay that adds Playwright browser and component tests, behind `--playwright`. */
+export const PLAYWRIGHT_FEATURE = "playwright";
 
 /**
  * Template files that are renamed while scaffolding.
@@ -41,27 +51,33 @@ const INFORMATIONAL_FLAGS: ReadonlyMap<string, "help" | "version"> = new Map([
   ["-v", "version"],
 ]);
 
-/** Flags that set an option rather than supplying a positional argument. */
-const FORCE_FLAGS: ReadonlySet<string> = new Set(["--force", "-f"]);
+/** Boolean options a caller can turn on with a flag. */
+const BOOLEAN_FLAGS: ReadonlyMap<string, "force" | "playwright"> = new Map([
+  ["--force", "force"],
+  ["-f", "force"],
+  ["--playwright", "playwright"],
+]);
 
-/** Raised for problems the user can fix, such as a bad name or a non-empty directory. */
-export class ScaffoldError extends Error {
-  public constructor(message: string) {
-    super(message);
-    this.name = "ScaffoldError";
-  }
-}
+/** Options that are on or off, as opposed to the target directory. */
+type Options = Record<"force" | "playwright", boolean>;
 
 export type ParsedArguments =
   | { readonly command: "help" }
   | { readonly command: "version" }
-  | { readonly command: "scaffold"; readonly force: boolean; readonly targetDirectory?: string };
+  | {
+      readonly command: "scaffold";
+      readonly force: boolean;
+      readonly playwright: boolean;
+      readonly targetDirectory?: string;
+    };
 
 export type ScaffoldOptions = {
   /** Directory to create the application in. */
   readonly targetDirectory: string;
   /** Allow scaffolding into a directory that already contains files. */
   readonly force?: boolean;
+  /** Add the optional Playwright browser and component tests. */
+  readonly playwright?: boolean;
 };
 
 export type ScaffoldResult = {
@@ -69,6 +85,8 @@ export type ScaffoldResult = {
   readonly targetDirectory: string;
   /** Name written to the generated `package.json`. */
   readonly packageName: string;
+  /** Optional features copied into the application. */
+  readonly features: readonly string[];
   /** Template files written, as POSIX-style paths relative to the target directory. */
   readonly files: readonly string[];
 };
@@ -129,7 +147,7 @@ export function toPackageName(input: string): string {
 
 /** Parses command line arguments, rejecting anything unrecognised. */
 export function parseArguments(argv: readonly string[]): ParsedArguments {
-  let force = false;
+  const options: Options = { force: false, playwright: false };
   let targetDirectory: string | undefined;
 
   for (const argument of argv) {
@@ -139,16 +157,24 @@ export function parseArguments(argv: readonly string[]): ParsedArguments {
       return { command };
     }
 
-    if (FORCE_FLAGS.has(argument)) {
-      force = true;
-    } else {
-      targetDirectory = acceptTarget(targetDirectory, argument);
-    }
+    targetDirectory = applyArgument(argument, options, targetDirectory);
   }
 
   return targetDirectory === undefined
-    ? { command: "scaffold", force }
-    : { command: "scaffold", force, targetDirectory };
+    ? { command: "scaffold", ...options }
+    : { command: "scaffold", ...options, targetDirectory };
+}
+
+/** Turns one option flag on, or records a positional argument as the target directory. */
+function applyArgument(argument: string, options: Options, targetDirectory: string | undefined): string | undefined {
+  const option = BOOLEAN_FLAGS.get(argument);
+
+  if (option === undefined) {
+    return acceptTarget(targetDirectory, argument);
+  }
+
+  options[option] = true;
+  return targetDirectory;
 }
 
 /** Records a positional argument, rejecting unknown options and extra directories. */
@@ -168,16 +194,24 @@ function acceptTarget(current: string | undefined, argument: string): string {
 export async function scaffoldProject(options: ScaffoldOptions): Promise<ScaffoldResult> {
   const targetDirectory = path.resolve(options.targetDirectory);
   const force = options.force === true;
+  const features = options.playwright === true ? [PLAYWRIGHT_FEATURE] : [];
 
   await assertDirectoryIsAvailable(targetDirectory, force);
+  await copyTemplate(targetDirectory);
+
+  if (options.playwright === true) {
+    await applyFeature(targetDirectory, PLAYWRIGHT_FEATURE);
+  }
+
+  const packageName = await nameApplication(targetDirectory);
+
+  return { targetDirectory, packageName, features, files: await listRelativeFiles(targetDirectory) };
+}
+
+async function copyTemplate(targetDirectory: string): Promise<void> {
   await mkdir(targetDirectory, { recursive: true });
   await cp(templateDirectory(), targetDirectory, { recursive: true, force: true });
   await applyTemplateRenames(targetDirectory);
-
-  const packageName = toPackageName(path.basename(targetDirectory));
-  await writePackageName(path.join(targetDirectory, "package.json"), packageName);
-
-  return { targetDirectory, packageName, files: await listRelativeFiles(targetDirectory) };
 }
 
 async function assertDirectoryIsAvailable(targetDirectory: string, force: boolean): Promise<void> {
@@ -223,17 +257,25 @@ async function applyTemplateRenames(targetDirectory: string): Promise<void> {
   await Promise.all(renames);
 }
 
-async function writePackageName(manifestPath: string, packageName: string): Promise<void> {
-  const parsed: unknown = JSON.parse(await readFile(manifestPath, "utf8"));
-
-  if (!isRecord(parsed)) {
-    throw new ScaffoldError(`The template manifest at "${manifestPath}" is not a JSON object.`);
-  }
-
-  const manifest: Record<string, unknown> = { ...parsed, name: packageName };
-  await writeFile(manifestPath, `${JSON.stringify(manifest, undefined, 2)}\n`, "utf8");
+/**
+ * Copies an optional overlay over the generated application. The overlay carries the
+ * changes it needs beyond its own files, so it is applied after the template's files
+ * have their final names.
+ */
+async function applyFeature(targetDirectory: string, feature: string): Promise<void> {
+  await applyOverlay(targetDirectory, path.join(packageRootDirectory(), FEATURES_DIRECTORY_NAME, feature));
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+async function writePackageName(manifestPath: string, packageName: string): Promise<void> {
+  const manifest = await readJsonRecord(manifestPath);
+
+  await writeJson(manifestPath, { ...manifest, name: packageName });
+}
+
+/** Names the generated application after its directory, and returns that name. */
+async function nameApplication(targetDirectory: string): Promise<string> {
+  const packageName = toPackageName(path.basename(targetDirectory));
+
+  await writePackageName(path.join(targetDirectory, MANIFEST_FILE), packageName);
+  return packageName;
 }

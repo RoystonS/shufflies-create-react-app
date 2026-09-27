@@ -3,13 +3,15 @@ import { defineConfig } from "oxlint";
 
 // This repository is a Node.js CLI plus a bundled template. The template has its
 // own `oxlint.config.ts` (extending the `react` preset) and is linted in place
-// once it has been scaffolded, so it is skipped here.
+// once it has been scaffolded, so it is skipped here — and so is `features/`, whose
+// overlays are React and browser code that only makes sense once copied into a
+// generated application, where `npm run test:scaffold` lints them for real.
 //
 // Only rules that apply by broad file *pattern* belong here. A rule that exists for
 // the sake of one file is disabled in that file instead, next to the code it excuses.
 export default defineConfig({
   extends: [node],
-  ignorePatterns: ["template/**"],
+  ignorePatterns: ["features/**", "template/**"],
   overrides: [
     {
       // `node:test` registers a test by handing the runner a promise, so the

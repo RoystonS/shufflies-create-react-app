@@ -21,21 +21,34 @@ pnpm create @shufflies/react-app my-app
 ```
 
 Both forms resolve to this package (`@shufflies/create-react-app`) and forward any
-extra arguments to it.
+extra arguments to it, but npm claims the options it recognises before the
+initializer sees them. Send the initializer's own options after `--`:
+
+```shell
+npm create @shufflies/react-app@latest my-app -- --playwright
+pnpm create @shufflies/react-app my-app --playwright
+```
 
 ## Options
 
 ```text
 Usage: create-shufflies-react-app [options] [directory]
 
-  -f, --force    Scaffold into a directory that already contains files
-  -h, --help     Show usage
-  -v, --version  Print the initializer version
+  -f, --force       Scaffold into a directory that already contains files
+      --playwright  Add Playwright browser and component tests
+  -h, --help        Show usage
+  -v, --version     Print the initializer version
 ```
 
 With no directory argument the initializer prompts for one, defaulting to
 `shufflies-react-app`. A directory that already contains files is refused unless
 `--force` is passed.
+
+`--playwright` adds browser tests to the generated application: Playwright config
+with `e2e` and `components` projects, a sample spec for each, a story for the app
+itself and the gallery page that resolves stories. It is off by default, because
+running them needs a browser that npm does not install; the generated README says
+to run `npm run browser:install` first.
 
 ## What you get
 
@@ -48,6 +61,8 @@ With no directory argument the initializer prompts for one, defaulting to
 - oxfmt for formatting, including import sorting.
 - Separate TypeScript projects for the app, the build tooling and the specs,
   sharing one base configuration.
+- Optional Playwright browser tests (`--playwright`): end-to-end specs, component
+  specs that mount stories from a gallery page, and reference screenshots.
 
 ## Repository layout
 
@@ -56,7 +71,8 @@ With no directory argument the initializer prompts for one, defaulting to
 | `src/`      | The initializer CLI: `create-app.ts` holds the logic, `cli.ts` is the entry point.                                                                      |
 | `test/`     | Unit tests plus `scaffold.integration.ts`, which scaffolds a real app and runs its checks.                                                              |
 | `template/` | The application that gets copied. Files that cannot be stored under their real names (`_gitignore`, `_oxlint.config.ts`) are renamed while scaffolding. |
-| `dist/`     | The compiled CLI, built by `npm run build` and published alongside `template/`.                                                                         |
+| `features/` | Optional overlays: `playwright/` is copied over the template by `--playwright`.                                                                         |
+| `dist/`     | The compiled CLI, built by `npm run build` and published alongside the other two.                                                                       |
 
 ## Development
 
@@ -79,10 +95,17 @@ tarball into a scratch project with npm or pnpm, and runs the installed
 the `bin` wiring and template resolution out of `node_modules`.
 
 ```shell
-npm run scaffold:demo                      # scaffold only, as `npm create` does
-npm run scaffold:demo -- --install         # also install deps and run the checks
-npm run scaffold:demo -- --pnpm --install  # do all of it with pnpm
+npm run scaffold:demo                           # scaffold only, as `npm create` does
+npm run scaffold:demo -- --playwright           # scaffold with the browser tests
+npm run scaffold:demo -- --install              # also install deps and run the checks
+npm run scaffold:demo -- --playwright --install # check the browser test variant too
+npm run scaffold:demo -- --pnpm --install       # do all of it with pnpm
 ```
+
+`--playwright` is passed on to the initializer, so the app that lands in the run
+directory is the one `--playwright` produces. Its own tests need a browser, which
+`--install` does not download; install it in the generated app with
+`npm run browser:install`.
 
 Everything lands in `<temp>/shufflies-create-demo/<timestamp>/`, and unlike
 `npm run test:scaffold`, nothing is deleted when the run finishes, so the app can
