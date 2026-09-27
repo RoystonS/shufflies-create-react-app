@@ -1,3 +1,6 @@
+// The browser tests are opt-in, because they need a browser that npm does not install:
+// CI sets `CHECK_SCREENSHOTS` to run them, and every other run stops at listing them.
+
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -6,9 +9,12 @@ import process from "node:process";
 import { after, before, describe, it } from "node:test";
 
 import { APP_CHECKS, assertCommandSucceeded, runCommand } from "../scripts/scaffold-support.ts";
-import { packageRootDirectory, pathExists } from "../src/create-app.ts";
+import { listRelativeFiles, packageRootDirectory, pathExists } from "../src/create-app.ts";
 
 const cliEntry = path.join(packageRootDirectory(), "dist", "cli.js");
+
+/** Whether to run the generated app's browser tests, which download a browser first. */
+const checkScreenshots = process.env.CHECK_SCREENSHOTS === "1";
 
 let scratchRoot = "";
 
@@ -24,12 +30,20 @@ function scaffoldInto(target: string): void {
   assertCommandSucceeded("Scaffolding", runCommand(process.execPath, [cliEntry, target], packageRootDirectory()));
 }
 
-function installAndCheck(target: string): void {
-  assertCommandSucceeded("npm install", runCommand("npm", ["install", "--no-audit", "--no-fund"], target));
-
+/**
+ * Runs the scripts the generated application is expected to pass. The generated app's
+ * `lint` script denies warnings, which `test/create-app.spec.ts` guards, so passing here
+ * means an application that is clean rather than one that merely has no errors.
+ */
+function runAppChecks(target: string): void {
   for (const script of APP_CHECKS) {
     assertCommandSucceeded(`npm run ${script}`, runCommand("npm", ["run", script], target));
   }
+}
+
+function installAndCheck(target: string): void {
+  assertCommandSucceeded("npm install", runCommand("npm", ["install", "--no-audit", "--no-fund"], target));
+  runAppChecks(target);
 }
 
 /** Scaffolds the variant that `--playwright` produces, which the option is named after. */
@@ -65,6 +79,28 @@ function assertBrowserTestsAreDiscoverable(target: string): void {
   }
 }
 
+/**
+ * Runs the app's own browser tests. It records the reference screenshots on this machine
+ * and then compares against them, because rendering differs from platform to platform: a
+ * baseline recorded on one runner is not a baseline on another.
+ */
+function runScreenshotTests(target: string): void {
+  assertCommandSucceeded("npm run browser:install", runCommand("npm", ["run", "browser:install"], target));
+  assertCommandSucceeded("npm run test:browser:update", runCommand("npm", ["run", "test:browser:update"], target));
+  assertCommandSucceeded("npm run test:browser", runCommand("npm", ["run", "test:browser"], target));
+}
+
+/** Confirms the screenshot tests compared something, rather than matching nothing. */
+async function assertScreenshotsWereRecorded(target: string): Promise<void> {
+  const files = await listRelativeFiles(target);
+
+  for (const snapshots of ["tests/components/App.spec.ts-snapshots/", "tests/e2e/app.spec.ts-snapshots/"]) {
+    const recorded = files.some((file) => file.startsWith(snapshots) && file.endsWith(".png"));
+
+    assert.ok(recorded, `expected ${snapshots} to hold a reference screenshot`);
+  }
+}
+
 describe("scaffolded application", () => {
   it("installs and passes every check the template ships with", async () => {
     const target = path.join(scratchRoot, "sample-app");
@@ -80,11 +116,20 @@ describe("scaffolded application", () => {
     installAndCheck(target);
   });
 
-  it("installs the browser test variant, which finds its tests", () => {
+  it("installs the browser test variant, which finds its tests", async () => {
     const target = path.join(scratchRoot, "browser-app");
 
     scaffoldBrowserTestsInto(target);
     installAndCheck(target);
     assertBrowserTestsAreDiscoverable(target);
+
+    if (!checkScreenshots) {
+      process.stdout.write("Not running the browser tests; set CHECK_SCREENSHOTS=1 to run them.\n");
+      return;
+    }
+
+    runScreenshotTests(target);
+
+    await assertScreenshotsWereRecorded(target);
   });
 });

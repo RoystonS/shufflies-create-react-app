@@ -49,6 +49,9 @@ jobs:
       - name: Run tests
         run: npm test
       - name: Scaffold a sample app and verify it
+        env:
+          # Also run the generated app's Playwright tests, which download a browser.
+          CHECK_SCREENSHOTS: "1"
         run: npm run test:scaffold
       - name: Run semantic-release
         env:

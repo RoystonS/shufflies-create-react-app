@@ -186,6 +186,19 @@ describe("template", () => {
     assert.ok(config.includes("@shufflies/oxlint-config"));
   });
 
+  it("denies warnings when linting", async () => {
+    const scripts = requiredRecord(await readJsonObject(templateManifestPath()), "scripts");
+
+    for (const script of ["lint", "lint:fix"]) {
+      const command = scripts[script];
+
+      assert.ok(
+        typeof command === "string" && command.includes("--deny-warnings"),
+        `expected ${script} to deny warnings, so a clean run means a clean app`,
+      );
+    }
+  });
+
   it("ships a sample .spec file and no .test file", async () => {
     const files = await listRelativeFiles(templateDirectory());
     const testFiles = files.filter((file) => file.includes(".test."));

@@ -54,7 +54,8 @@ project exists to check.
   `jsdom` and set `test.environment` in `vite.config.ts`.
 - **Linting** uses [oxlint](https://oxc.rs/docs/guide/usage/linter/) with the
   `react` preset from [`@shufflies/oxlint-config`](https://www.npmjs.com/package/@shufflies/oxlint-config),
-  including type-aware rules.
+  including type-aware rules. Warnings fail the run, so a passing `npm run lint` means
+  there is nothing left to fix.
 - **Formatting** uses [oxfmt](https://oxc.rs/docs/guide/usage/formatter/),
   configured in `.oxfmtrc.json`, which also sorts imports.
 - **`.prototools`** pins Node 26 and npm 12 for anyone using

@@ -37,10 +37,12 @@ jobs:
         run: npm run lint
       - name: Run tests
         run: npm test
-      # Scaffolding installs the template's own dependencies, so doing it once
-      # per Node version would dominate the run.
+      # Scaffolding installs the template's dependencies, so every supported Node
+      # version proves it can do that and pass the app's checks. The browser tests run
+      # on one version only, because each of them would download a browser of its own.
       - name: Scaffold a sample app and verify it
-        if: matrix.node-version == '26.x'
+        env:
+          CHECK_SCREENSHOTS: ${{ matrix.node-version == '26.x' && '1' || '' }}
         run: npm run test:scaffold
 
   # Collect the above matrix together into a single check that PRs can be blocked on

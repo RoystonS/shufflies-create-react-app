@@ -44,8 +44,8 @@
     "pretest:scaffold": "npm run build",
     "test:scaffold": "node --test test/scaffold.integration.ts",
     "scaffold:demo": "node scripts/create-demo.ts",
-    "lint": "oxlint --report-unused-disable-directives-severity error",
-    "lint:fix": "oxlint --fix --report-unused-disable-directives-severity error",
+    "lint": "oxlint --deny-warnings --report-unused-disable-directives-severity error",
+    "lint:fix": "oxlint --fix --deny-warnings --report-unused-disable-directives-severity error",
     "format": "oxfmt",
     "format:check": "oxfmt --check"
   },

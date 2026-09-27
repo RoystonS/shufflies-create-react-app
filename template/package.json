@@ -9,8 +9,8 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "oxlint --report-unused-disable-directives-severity error",
-    "lint:fix": "oxlint --fix --report-unused-disable-directives-severity error",
+    "lint": "oxlint --deny-warnings --report-unused-disable-directives-severity error",
+    "lint:fix": "oxlint --fix --deny-warnings --report-unused-disable-directives-severity error",
     "format": "oxfmt",
     "format:check": "oxfmt --check"
   },

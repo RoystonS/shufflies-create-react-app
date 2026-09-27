@@ -42,9 +42,11 @@ scaffold check out of the default suite. It is run by `npm run test:scaffold`.
 Lint rules that exist for one file's sake live in that file, as a file-wide
 `/* oxlint-disable rule/name */` next to a comment saying why. Only rules that apply
 by broad file pattern (`*.spec`, `*.test`, `*.integration`, `*.cjs`) are configured
-in `oxlint.config.ts`. `npm run lint` passes
-`--report-unused-disable-directives-severity error`, so a disable comment that stops
-suppressing anything fails the build instead of rotting.
+in `oxlint.config.ts`. `npm run lint` passes `--deny-warnings` and
+`--report-unused-disable-directives-severity error`, so neither a warning nor a stale
+disable comment can pass the build. The generated app's `lint` script denies warnings
+too — `test/create-app.spec.ts` guards that — and `test/scaffold.integration.ts` runs
+it as part of checking a scaffolded app.
 
 ## Simulating a real `create`
 
@@ -113,6 +115,7 @@ install.
   forwards it without the separator.
 - `--playwright` adds Playwright to a generated app but no browser. `npm install`
   fetches the runner only; `npm run browser:install` downloads Chromium. The scaffold
-  integration test therefore stops at `playwright test --list`.
+  integration test therefore stops at `playwright test --list`, and only runs the tests
+  for real when `CHECK_SCREENSHOTS=1`, which is what the release workflow sets.
 - Adding a dependency anywhere in `template/` means new scaffolds get it; check
   whether it belongs in the app's `devDependencies` instead.

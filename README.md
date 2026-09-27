@@ -111,6 +111,15 @@ Everything lands in `<temp>/shufflies-create-demo/<timestamp>/`, and unlike
 `npm run test:scaffold`, nothing is deleted when the run finishes, so the app can
 be opened in an editor and run.
 
+`npm run test:scaffold` installs the generated app's dependencies, so it needs network
+access. It scaffolds both the plain app and the `--playwright` variant and runs each
+one's `typecheck`, `lint`, `format:check`, `test` and `build`; the generated app's lint
+denies warnings, so a pass means an app that is clean rather than one that merely has no
+errors. Pull requests do this on every supported Node version, while the release
+workflow sets `CHECK_SCREENSHOTS=1`, which downloads a browser and runs the variant's
+Playwright tests as well, recording the reference screenshots on the runner before
+comparing against them.
+
 ## Releasing
 
 Commits must follow Conventional Commits: `commitlint` runs from the Husky
